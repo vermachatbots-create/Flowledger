@@ -1,14 +1,25 @@
 import Stripe from "stripe";
 import { PLANS } from "@/lib/constants";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
-  typescript: true,
-});
+let stripeClient: Stripe | undefined;
+
+export function getStripe(): Stripe {
+  if (!stripeClient) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      throw new Error("STRIPE_SECRET_KEY is not configured");
+    }
+    stripeClient = new Stripe(secretKey, {
+      apiVersion: "2025-02-24.acacia",
+      typescript: true,
+    });
+  }
+  return stripeClient;
+}
 
 export const STRIPE_PRICES = {
-  PRO: process.env.STRIPE_PRO_PRICE_ID!,
-  TEAM: process.env.STRIPE_TEAM_PRICE_ID!,
+  PRO: process.env.STRIPE_PRO_PRICE_ID ?? "",
+  TEAM: process.env.STRIPE_TEAM_PRICE_ID ?? "",
 };
 
 export function getPlanByPriceId(priceId: string) {

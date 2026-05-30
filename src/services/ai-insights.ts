@@ -58,10 +58,11 @@ export async function buildFinancialContext(userId: string) {
   );
 
   const pendingReceivables = recentInvoices
-    .filter((i) =>
-      [InvoiceStatus.SENT, InvoiceStatus.VIEWED, InvoiceStatus.OVERDUE].includes(
-        i.status
-      )
+    .filter(
+      (i) =>
+        i.status === InvoiceStatus.SENT ||
+        i.status === InvoiceStatus.VIEWED ||
+        i.status === InvoiceStatus.OVERDUE
     )
     .reduce((s, i) => s + decimalToNumber(i.total), 0);
 

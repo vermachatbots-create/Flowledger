@@ -5,7 +5,6 @@ import {
   endOfMonth,
   subMonths,
   format,
-  isBefore,
   startOfDay,
 } from "date-fns";
 
@@ -67,10 +66,11 @@ export async function getDashboardMetrics(userId: string) {
     .reduce((sum, e) => sum + decimalToNumber(e.amount), 0);
 
   const outstanding = invoices
-    .filter((i) =>
-      [InvoiceStatus.SENT, InvoiceStatus.VIEWED, InvoiceStatus.OVERDUE].includes(
-        i.status
-      )
+    .filter(
+      (i) =>
+        i.status === InvoiceStatus.SENT ||
+        i.status === InvoiceStatus.VIEWED ||
+        i.status === InvoiceStatus.OVERDUE
     )
     .reduce((sum, inv) => sum + decimalToNumber(inv.total), 0);
 
