@@ -25,8 +25,8 @@ export function Header({ user, title = "Dashboard" }: HeaderProps) {
     .slice(0, 2) ?? "FL";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border/50 px-6 bg-background/80 backdrop-blur-xl sticky top-0 z-40">
-      <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-white/[0.06] bg-[#070b12]/70 px-4 backdrop-blur-2xl sm:px-6">
+      <h1 className="text-lg font-semibold tracking-tight text-slate-100 sm:text-xl">{title}</h1>
 
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="rounded-xl">
@@ -43,7 +43,7 @@ export function Header({ user, title = "Dashboard" }: HeaderProps) {
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
 
-        <div className="flex items-center gap-3 ml-2 pl-4 border-l border-border/50">
+        <div className="ml-2 flex items-center gap-3 border-l border-white/[0.06] pl-4">
           <Avatar className="h-8 w-8">
             <AvatarImage src={user?.image ?? undefined} />
             <AvatarFallback className="text-xs">{initials}</AvatarFallback>

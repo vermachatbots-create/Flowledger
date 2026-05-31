@@ -58,7 +58,10 @@ const config: Config = {
       },
       boxShadow: {
         soft: "0 2px 40px -12px rgba(0,0,0,0.12)",
-        glow: "0 0 60px -12px hsl(var(--primary) / 0.35)",
+        glow: "0 0 60px -12px rgba(99, 102, 241, 0.25)",
+        glass: "0 8px 32px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.07)",
+        "glass-hover":
+          "0 16px 48px -14px rgba(99, 102, 241, 0.18), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)",
       },
       keyframes: {
         shimmer: {
@@ -68,10 +71,15 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "mesh-drift": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.02)" },
+        },
       },
       animation: {
         shimmer: "shimmer 2s infinite",
         "fade-up": "fade-up 0.5s ease-out forwards",
+        "mesh-drift": "mesh-drift 24s ease-in-out infinite",
       },
     },
   },

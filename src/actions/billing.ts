@@ -1,79 +1,149 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import Razorpay from "razorpay";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/server/auth";
-import { getStripe, STRIPE_PRICES } from "@/lib/stripe";
 import { SubscriptionTier } from "@prisma/client";
 
-export async function createCheckoutSession(tier: "PRO" | "TEAM") {
-  const userId = await requireUserId();
-  const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
+const razorpay = new Razorpay({
+key_id: process.env.RAZORPAY_KEY_ID!,
+key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
 
-  let customerId = user.stripeCustomerId;
+const RAZORPAY_PLANS = {
+PRO: process.env.RAZORPAY_PRO_PLAN_ID!,
+TEAM: process.env.RAZORPAY_TEAM_PLAN_ID!,
+};
 
-  if (!customerId) {
-    const customer = await getStripe().customers.create({
-      email: user.email ?? undefined,
-      name: user.name ?? undefined,
-      metadata: { userId },
-    });
-    customerId = customer.id;
-    await db.user.update({
-      where: { id: userId },
-      data: { stripeCustomerId: customerId },
-    });
-  }
+export async function createCheckoutSession(
+tier: "PRO" | "TEAM"
+) {
+const userId = await requireUserId();
 
-  const priceId = tier === "PRO" ? STRIPE_PRICES.PRO : STRIPE_PRICES.TEAM;
+const user = await db.user.findUniqueOrThrow({
+where: { id: userId },
+});
 
-  const session = await getStripe().checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    payment_method_types: ["card"],
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
-    metadata: { userId, tier },
-  });
+const planId =
+tier === "PRO"
+? RAZORPAY_PLANS.PRO
+: RAZORPAY_PLANS.TEAM;
 
-  if (!session.url) throw new Error("Failed to create checkout session");
-  redirect(session.url);
+const subscription =
+await razorpay.subscriptions.create({
+plan_id: planId,
+customer_notify: 1,
+total_count: 120,
+notes: {
+userId,
+tier,
+},
+});
+
+await db.subscription.create({
+data: {
+userId,
+razorpaySubscriptionId: subscription.id,
+status: subscription.status,
+tier,
+},
+});
+
+return {
+subscriptionId: subscription.id,
+razorpayKey:
+process.env.RAZORPAY_KEY_ID,
+user: {
+name: user.name,
+email: user.email,
+},
+};
 }
 
 export async function createBillingPortalSession() {
-  const userId = await requireUserId();
-  const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
+const userId = await requireUserId();
 
-  if (!user.stripeCustomerId) {
-    throw new Error("No billing account found");
-  }
+const subscription =
+await db.subscription.findFirst({
+where: { userId },
+orderBy: {
+createdAt: "desc",
+},
+});
 
-  const session = await getStripe().billingPortal.sessions.create({
-    customer: user.stripeCustomerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`,
-  });
+if (!subscription) {
+throw new Error(
+"No active subscription found"
+);
+}
 
-  redirect(session.url);
+return {
+subscriptionId:
+subscription.razorpaySubscriptionId,
+};
+}
+
+export async function cancelSubscription() {
+const userId = await requireUserId();
+
+const subscription =
+await db.subscription.findFirst({
+where: { userId },
+orderBy: {
+createdAt: "desc",
+},
+});
+
+if (
+!subscription?.razorpaySubscriptionId
+) {
+throw new Error(
+"Subscription not found"
+);
+}
+
+await razorpay.subscriptions.cancel(
+subscription.razorpaySubscriptionId,
+true
+);
+
+await db.subscription.update({
+where: {
+id: subscription.id,
+},
+data: {
+status: "cancelled",
+},
+});
+
+return {
+success: true,
+};
 }
 
 export async function getSubscriptionStatus() {
-  const userId = await requireUserId();
-  const user = await db.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: {
-      subscriptionTier: true,
-      stripeCustomerId: true,
-      subscriptions: {
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      },
-    },
-  });
+const userId = await requireUserId();
 
-  return {
-    tier: user.subscriptionTier as SubscriptionTier,
-    subscription: user.subscriptions[0] ?? null,
-    hasStripe: !!user.stripeCustomerId,
-  };
+const user =
+await db.user.findUniqueOrThrow({
+where: { id: userId },
+select: {
+subscriptionTier: true,
+subscriptions: {
+orderBy: {
+createdAt: "desc",
+},
+take: 1,
+},
+},
+});
+
+return {
+tier:
+user.subscriptionTier as SubscriptionTier,
+subscription:
+user.subscriptions[0] ?? null,
+hasSubscription:
+!!user.subscriptions.length,
+};
 }

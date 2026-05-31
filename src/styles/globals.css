@@ -25,23 +25,23 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 5.5%;
-    --card-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 222 47% 5%;
+    --foreground: 210 40% 98%;
+    --card: 222 40% 7%;
+    --card-foreground: 210 40% 98%;
+    --primary: 226 100% 72%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 217 28% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 28% 14%;
+    --muted-foreground: 215 16% 57%;
+    --accent: 217 28% 16%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 217 28% 16%;
+    --input: 217 28% 16%;
+    --ring: 226 70% 60%;
   }
 }
 
@@ -56,12 +56,74 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    @apply border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl;
   }
+
   .glass-card {
-    @apply rounded-3xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl border border-white/10 shadow-soft;
+    @apply rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.07] to-white/[0.02] shadow-[0_8px_40px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-2xl;
   }
+
+  .glass-panel {
+    @apply relative overflow-hidden rounded-[22px] border border-white/[0.08] bg-white/[0.03] shadow-[0_8px_32px_-10px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.07)] backdrop-blur-2xl transition-all duration-300 ease-out;
+  }
+
+  .glass-panel-hover {
+    @apply hover:border-white/[0.14] hover:bg-white/[0.045] hover:shadow-[0_16px_48px_-14px_rgba(99,102,241,0.18),inset_0_1px_0_0_rgba(255,255,255,0.1)];
+  }
+
+  .glass-panel-shine {
+    @apply pointer-events-none absolute inset-0 rounded-[22px] bg-gradient-to-br from-white/[0.07] via-transparent to-transparent opacity-70;
+  }
+
+  .glass-kpi {
+    @apply relative overflow-hidden rounded-[22px] border border-white/[0.08] bg-white/[0.035] p-5 shadow-[0_8px_28px_-10px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-2xl transition-all duration-300 ease-out sm:p-6;
+  }
+
+  .glass-kpi-hover {
+    @apply hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-white/[0.05] hover:shadow-[0_14px_40px_-12px_rgba(99,102,241,0.2),inset_0_1px_0_0_rgba(255,255,255,0.12)];
+  }
+
+  .glass-row {
+    @apply rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-md transition-all duration-200 hover:border-white/[0.1] hover:bg-white/[0.04];
+  }
+
   .text-gradient {
-    @apply bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-slate-50 via-slate-200 to-slate-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-indigo-300 via-blue-300 to-cyan-300 bg-clip-text text-transparent;
+  }
+
+  .dashboard-mesh {
+    background:
+      radial-gradient(ellipse 90% 60% at 8% -5%, rgba(99, 102, 241, 0.22), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 92% 8%, rgba(59, 130, 246, 0.16), transparent 50%),
+      radial-gradient(ellipse 60% 45% at 50% 100%, rgba(34, 211, 238, 0.08), transparent 55%),
+      radial-gradient(ellipse 50% 40% at 75% 65%, rgba(52, 211, 153, 0.07), transparent 50%),
+      linear-gradient(180deg, #070b12 0%, #0c1220 45%, #070b12 100%);
+    animation: mesh-drift 24s ease-in-out infinite;
+  }
+
+  .dashboard-noise::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+}
+
+@keyframes mesh-drift {
+  0%,
+  100% {
+    filter: hue-rotate(0deg);
+    transform: scale(1);
+  }
+  50% {
+    filter: hue-rotate(8deg);
+    transform: scale(1.02);
   }
 }

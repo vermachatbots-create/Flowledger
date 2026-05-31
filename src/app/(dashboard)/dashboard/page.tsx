@@ -1,11 +1,3 @@
-import {
-  DollarSign,
-  Flame,
-  TrendingUp,
-  FileWarning,
-  Wallet,
-  LineChart,
-} from "lucide-react";
 import { requireUserId } from "@/server/auth";
 import {
   getDashboardMetrics,
@@ -22,7 +14,8 @@ import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { ExpensePieChart } from "@/components/dashboard/expense-pie-chart";
 import { CashFlowChart } from "@/components/dashboard/cash-flow-chart";
 import { RecentInvoices } from "@/components/dashboard/recent-invoices";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { GlassChartCard } from "@/components/dashboard/glass-chart-card";
 
 export const metadata = { title: "Dashboard" };
 
@@ -46,102 +39,100 @@ export default async function DashboardPage() {
     ]);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Financial Overview</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Real-time snapshot of your business health
-        </p>
-      </div>
+    <DashboardShell>
+      <div className="mx-auto max-w-7xl space-y-8 px-1 pb-10 sm:px-2">
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-indigo-400/80">
+            Overview
+          </p>
+          <h2 className="text-gradient text-2xl font-semibold tracking-tight sm:text-3xl">
+            Financial Overview
+          </h2>
+          <p className="max-w-xl text-sm text-slate-500">
+            Real-time snapshot of your business health — revenue, burn, and liquidity at a glance.
+          </p>
+        </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <KpiCard
-          title="Monthly Revenue"
-          value={metrics.monthlyRevenue}
-          change={metrics.revenueGrowth}
-          icon={DollarSign}
-          index={0}
-        />
-        <KpiCard
-          title="Burn Rate"
-          value={metrics.burnRate}
-          change={metrics.expenseGrowth}
-          icon={Flame}
-          index={1}
-        />
-        <KpiCard
-          title="Net Profit"
-          value={metrics.netProfit}
-          icon={TrendingUp}
-          index={2}
-        />
-        <KpiCard
-          title="Outstanding"
-          value={metrics.outstanding}
-          icon={FileWarning}
-          index={3}
-        />
-        <KpiCard
-          title="Cash Reserve"
-          value={metrics.cashReserve}
-          icon={Wallet}
-          index={4}
-        />
-        <KpiCard
-          title="Revenue Forecast"
-          value={metrics.revenueForecast}
-          icon={LineChart}
-          index={5}
-        />
-      </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <KpiCard
+            title="Monthly Revenue"
+            value={metrics.monthlyRevenue}
+            change={metrics.revenueGrowth}
+            icon="dollar"
+            index={0}
+          />
+          <KpiCard
+            title="Burn Rate"
+            value={metrics.burnRate}
+            change={metrics.expenseGrowth}
+            icon="flame"
+            index={1}
+          />
+          <KpiCard
+            title="Net Profit"
+            value={metrics.netProfit}
+            icon="trendingUp"
+            index={2}
+          />
+          <KpiCard
+            title="Outstanding"
+            value={metrics.outstanding}
+            icon="fileWarning"
+            index={3}
+          />
+          <KpiCard
+            title="Cash Reserve"
+            value={metrics.cashReserve}
+            icon="wallet"
+            index={4}
+          />
+          <KpiCard
+            title="Revenue Forecast"
+            value={metrics.revenueForecast}
+            icon="lineChart"
+            index={5}
+          />
+        </div>
 
-      <AiInsightCard
-        initialContent={insight?.content}
-        score={insight?.score}
-      />
+        <AiInsightCard initialContent={insight?.content} score={insight?.score} />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 rounded-2xl border-border/50">
-          <CardHeader>
-            <CardTitle>Revenue vs Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="grid gap-5 lg:grid-cols-3 lg:gap-6">
+          <GlassChartCard
+            title="Revenue vs Expenses"
+            subtitle="Six-month performance"
+            className="lg:col-span-2"
+            delay={0.35}
+          >
             <RevenueChart data={revenueData} />
-          </CardContent>
-        </Card>
+          </GlassChartCard>
 
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader>
-            <CardTitle>Expense Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <GlassChartCard
+            title="Expense Breakdown"
+            subtitle="Current month by category"
+            delay={0.4}
+          >
             <ExpensePieChart data={expenseBreakdown} />
-          </CardContent>
-        </Card>
-      </div>
+          </GlassChartCard>
+        </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader>
-            <CardTitle>Cash Flow</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
+          <GlassChartCard title="Cash Flow" subtitle="Daily inflows & outflows" delay={0.45}>
             <CashFlowChart data={cashFlow} />
-          </CardContent>
-        </Card>
+          </GlassChartCard>
 
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Invoices</CardTitle>
-            <span className="text-xs text-muted-foreground">
-              Health score: {metrics.healthScore}/100
-            </span>
-          </CardHeader>
-          <CardContent>
+          <GlassChartCard
+            title="Recent Invoices"
+            delay={0.5}
+            headerRight={
+              <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-xs font-medium tabular-nums text-slate-400">
+                Health {metrics.healthScore}/100
+              </span>
+            }
+          >
             <RecentInvoices invoices={recentInvoices} />
-          </CardContent>
-        </Card>
+          </GlassChartCard>
+        </div>
       </div>
-    </div>
+    </DashboardShell>
   );
 }

@@ -24,9 +24,12 @@ const statusVariant: Record<string, "success" | "warning" | "danger" | "secondar
 export function RecentInvoices({ invoices }: { invoices: InvoiceRow[] }) {
   if (!invoices.length) {
     return (
-      <p className="text-sm text-muted-foreground py-8 text-center">
+      <p className="py-10 text-center text-sm text-slate-500">
         No invoices yet.{" "}
-        <Link href="/invoices/new" className="text-primary hover:underline">
+        <Link
+          href="/invoices/new"
+          className="text-indigo-400 transition-colors hover:text-indigo-300"
+        >
           Create your first invoice
         </Link>
       </p>
@@ -34,16 +37,16 @@ export function RecentInvoices({ invoices }: { invoices: InvoiceRow[] }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {invoices.map((invoice) => (
         <Link
           key={invoice.id}
           href={`/invoices/${invoice.id}`}
-          className="flex items-center justify-between rounded-xl border border-border/50 p-4 hover:bg-muted/30 transition-colors"
+          className="glass-row flex items-center justify-between p-4"
         >
           <div>
-            <p className="font-medium text-sm">{invoice.invoiceNumber}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-sm font-medium text-slate-100">{invoice.invoiceNumber}</p>
+            <p className="mt-0.5 text-xs text-slate-500">
               {invoice.client?.name ?? "No client"} · Due {formatDate(invoice.dueDate)}
             </p>
           </div>
@@ -51,7 +54,7 @@ export function RecentInvoices({ invoices }: { invoices: InvoiceRow[] }) {
             <Badge variant={statusVariant[invoice.status] ?? "secondary"}>
               {invoice.status}
             </Badge>
-            <span className="font-semibold text-sm">
+            <span className="text-sm font-semibold tabular-nums text-slate-100">
               {formatCurrency(parseFloat(invoice.total.toString()))}
             </span>
           </div>

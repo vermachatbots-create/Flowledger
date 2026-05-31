@@ -2,18 +2,7 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { formatCurrency } from "@/lib/utils";
-
-const COLORS = [
-  "#8b5cf6",
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#ec4899",
-  "#06b6d4",
-  "#84cc16",
-  "#6366f1",
-];
+import { CHART_TOOLTIP_STYLE, PIE_COLORS } from "@/components/dashboard/chart-styles";
 
 interface ExpensePieChartProps {
   data: { category: string; amount: number }[];
@@ -22,7 +11,7 @@ interface ExpensePieChartProps {
 export function ExpensePieChart({ data }: ExpensePieChartProps) {
   if (!data.length) {
     return (
-      <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-[280px] items-center justify-center text-sm text-slate-500">
         No expenses this month
       </div>
     );
@@ -40,24 +29,27 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
           data={chartData}
           cx="50%"
           cy="50%"
-          innerRadius={60}
-          outerRadius={90}
-          paddingAngle={4}
+          innerRadius={64}
+          outerRadius={92}
+          paddingAngle={3}
           dataKey="value"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth={2}
         >
           {chartData.map((_, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
           ))}
         </Pie>
         <Tooltip
           formatter={(value: number) => formatCurrency(value)}
-          contentStyle={{
-            backgroundColor: "hsl(var(--card))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: "12px",
-          }}
+          contentStyle={CHART_TOOLTIP_STYLE}
         />
-        <Legend />
+        <Legend
+          wrapperStyle={{ fontSize: "11px" }}
+          formatter={(value) => (
+            <span style={{ color: "rgba(148, 163, 184, 0.85)" }}>{value}</span>
+          )}
+        />
       </PieChart>
     </ResponsiveContainer>
   );

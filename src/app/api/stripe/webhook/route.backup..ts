@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getStripe, getPlanByPriceId } from "@/lib/stripe";
+import { getStripe, getPlanByPriceId } from "@/lib/razorpay";
 import { db } from "@/lib/db";
 import { SubscriptionTier, SubscriptionStatus } from "@prisma/client";
 

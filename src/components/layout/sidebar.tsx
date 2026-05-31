@@ -27,12 +27,12 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col border-r border-border/50 bg-card/30 backdrop-blur-xl">
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-border/50">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-          <Sparkles className="h-4 w-4 text-primary-foreground" />
+    <aside className="relative z-20 hidden w-64 flex-col border-r border-white/[0.06] bg-[#070b12]/80 backdrop-blur-2xl lg:flex">
+      <div className="flex h-16 items-center gap-2 border-b border-white/[0.06] px-6">
+        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 shadow-[0_0_20px_-4px_rgba(99,102,241,0.5)]">
+          <Sparkles className="h-4 w-4 text-white" />
         </div>
-        <span className="font-semibold tracking-tight">FlowLedger</span>
+        <span className="font-semibold tracking-tight text-slate-100">FlowLedger</span>
       </div>
 
       <nav className="flex-1 space-y-1 p-4">
@@ -48,14 +48,14 @@ export function Sidebar() {
                 className={cn(
                   "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "text-slate-50"
+                    : "text-slate-500 hover:bg-white/[0.04] hover:text-slate-200"
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-active"
-                    className="absolute inset-0 rounded-xl bg-muted"
+                    className="absolute inset-0 rounded-xl border border-white/[0.06] bg-white/[0.06]"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                   />
                 )}
