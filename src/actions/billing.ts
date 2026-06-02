@@ -3,147 +3,170 @@
 import Razorpay from "razorpay";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/server/auth";
-import { SubscriptionTier } from "@prisma/client";
+import { SubscriptionTier, SubscriptionStatus } from "@prisma/client";
 
 const razorpay = new Razorpay({
-key_id: process.env.RAZORPAY_KEY_ID!,
-key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
 const RAZORPAY_PLANS = {
-PRO: process.env.RAZORPAY_PRO_PLAN_ID!,
-TEAM: process.env.RAZORPAY_TEAM_PLAN_ID!,
+  PRO: process.env.RAZORPAY_PRO_PLAN_ID!,
+  TEAM: process.env.RAZORPAY_TEAM_PLAN_ID!,
 };
 
-export async function createCheckoutSession(
-tier: "PRO" | "TEAM"
-) {
-const userId = await requireUserId();
+const SUBSCRIPTION_DURATION_MONTHS = 120; // 10 years
 
-const user = await db.user.findUniqueOrThrow({
-where: { id: userId },
-});
+export async function createCheckoutSession(tier: "PRO" | "TEAM") {
+  try {
+    const userId = await requireUserId();
 
-const planId =
-tier === "PRO"
-? RAZORPAY_PLANS.PRO
-: RAZORPAY_PLANS.TEAM;
+    const user = await db.user.findUniqueOrThrow({
+      where: { id: userId },
+    });
 
-const subscription =
-await razorpay.subscriptions.create({
-plan_id: planId,
-customer_notify: 1,
-total_count: 120,
-notes: {
-userId,
-tier,
-},
-});
+    const planId =
+      tier === "PRO"
+        ? RAZORPAY_PLANS.PRO
+        : RAZORPAY_PLANS.TEAM;
 
-await db.subscription.create({
-data: {
-userId,
-razorpaySubscriptionId: subscription.id,
-status: subscription.status,
-tier,
-},
-});
+    const subscription =
+      await razorpay.subscriptions.create({
+        plan_id: planId,
+        customer_notify: 1,
+        total_count: SUBSCRIPTION_DURATION_MONTHS,
+        notes: {
+          userId,
+          tier,
+        },
+      });
 
-return {
-subscriptionId: subscription.id,
-razorpayKey:
-process.env.RAZORPAY_KEY_ID,
-user: {
-name: user.name,
-email: user.email,
-},
-};
+    if (!subscription?.id) {
+      throw new Error("Failed to create Razorpay subscription");
+    }
+
+    await db.subscription.create({
+      data: {
+        userId,
+        razorpaySubscriptionId: subscription.id,
+        razorpayPlanId: planId,
+        status: SubscriptionStatus.ACTIVE,
+        tier: tier as SubscriptionTier,
+
+
+
+        currentPeriodStart: new Date(),
+        currentPeriodEnd:new Date(Date.now() + 30 * 24 * 60 *60 * 1000),
+      },
+    });
+
+    return {
+      subscriptionId: subscription.id,
+      razorpayKey: process.env.RAZORPAY_KEY_ID,
+      user: {
+        name: user.name,
+        email: user.email,
+      },
+    };
+  } catch (error) {
+    console.error("Error creating checkout session:", error);
+    throw error;
+  }
 }
 
 export async function createBillingPortalSession() {
-const userId = await requireUserId();
+  try {
+    const userId = await requireUserId();
 
-const subscription =
-await db.subscription.findFirst({
-where: { userId },
-orderBy: {
-createdAt: "desc",
-},
-});
+    const subscription =
+      await db.subscription.findFirst({
+        where: { userId },
+        orderBy: {
+          createAt: "desc",
+        },
+      });
 
-if (!subscription) {
-throw new Error(
-"No active subscription found"
-);
-}
+    if (!subscription) {
+      throw new Error("No active subscription found");
+    }
 
-return {
-subscriptionId:
-subscription.razorpaySubscriptionId,
-};
+    return {
+      subscriptionId:
+        subscription.razorpaySubscriptionId,
+    };
+  } catch (error) {
+    console.error("Error creating billing portal session:", error);
+    throw error;
+  }
 }
 
 export async function cancelSubscription() {
-const userId = await requireUserId();
+  try {
+    const userId = await requireUserId();
 
-const subscription =
-await db.subscription.findFirst({
-where: { userId },
-orderBy: {
-createdAt: "desc",
-},
-});
+    const subscription =
+      await db.subscription.findFirst({
+        where: { userId },
+        orderBy: {
+          createAt: "desc",
+        },
+      });
 
-if (
-!subscription?.razorpaySubscriptionId
-) {
-throw new Error(
-"Subscription not found"
-);
-}
+    if (!subscription?.razorpaySubscriptionId) {
+      throw new Error("Subscription not found");
+    }
 
-await razorpay.subscriptions.cancel(
-subscription.razorpaySubscriptionId,
-true
-);
+    await razorpay.subscriptions.cancel(
+      subscription.razorpaySubscriptionId,
+      true
+    );
 
-await db.subscription.update({
-where: {
-id: subscription.id,
-},
-data: {
-status: "cancelled",
-},
-});
+    await db.subscription.update({
+      where: {
+        id: subscription.id,
+      },
+      data: {
+        status: SubscriptionStatus.CANCELED,
+      },
+    });
 
-return {
-success: true,
-};
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error canceling subscription:", error);
+    throw error;
+  }
 }
 
 export async function getSubscriptionStatus() {
-const userId = await requireUserId();
+  try {
+    const userId = await requireUserId();
 
-const user =
-await db.user.findUniqueOrThrow({
-where: { id: userId },
-select: {
-subscriptionTier: true,
-subscriptions: {
-orderBy: {
-createdAt: "desc",
-},
-take: 1,
-},
-},
-});
+    const user =
+      await db.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: {
+          subscriptionTier: true,
+          subscriptions: {
+            orderBy: {
+              createAt: "desc",
+            },
+            take: 1,
+          },
+        },
+      });
 
-return {
-tier:
-user.subscriptionTier as SubscriptionTier,
-subscription:
-user.subscriptions[0] ?? null,
-hasSubscription:
-!!user.subscriptions.length,
-};
+    return {
+      tier:
+        user.subscriptionTier as SubscriptionTier,
+      subscription:
+        user.subscriptions[0] ?? null,
+      hasSubscription:
+        !!user.subscriptions.length,
+    };
+  } catch (error) {
+    console.error("Error fetching subscription status:", error);
+    throw error;
+  }
 }

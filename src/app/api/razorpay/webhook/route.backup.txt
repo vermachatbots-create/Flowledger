@@ -1,0 +1,225 @@
+import crypto from "crypto";
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+
+import { db } from "@/lib/db";
+
+import {
+SubscriptionTier,
+SubscriptionStatus,
+} from "@prisma/client";
+
+export async function POST(req: Request) {
+const body = await req.text();
+
+const signature = (await headers()).get(
+"x-razorpay-signature"
+);
+
+if (
+!signature ||
+!process.env.RAZORPAY_WEBHOOK_SECRET
+) {
+return NextResponse.json(
+{ error: "Missing signature" },
+{ status: 400 }
+);
+}
+
+const expectedSignature = crypto
+.createHmac(
+"sha256",
+process.env.RAZORPAY_WEBHOOK_SECRET
+)
+.update(body)
+.digest("hex");
+
+if (expectedSignature !== signature) {
+return NextResponse.json(
+{ error: "Invalid signature" },
+{ status: 400 }
+);
+}
+
+const event = JSON.parse(body);
+
+switch (event.event) {
+case "subscription.activated":
+case "subscription.charged": {
+const subscription =
+event.payload.subscription.entity;
+
+  const userId =
+    subscription.notes?.userId;
+
+  const tier =
+    subscription.notes?.tier as
+      | SubscriptionTier
+      | undefined;
+
+  if (!userId || !tier) break;
+
+  await db.user.update({
+    where: { id: userId },
+    data: {
+      subscriptionTier: tier,
+    },
+  });
+
+  await db.subscription.upsert({
+    where: {
+      razorpaySubscriptionId:
+        subscription.id,
+    },
+
+    create: {
+      userId,
+      tier,
+
+      razorpaySubscriptionId:
+        subscription.id,
+
+      status:
+        mapRazorpayStatus(
+          subscription.status
+        ),
+
+      currentPeriodStart:
+        subscription.current_start
+          ? new Date(
+              subscription.current_start *
+                1000
+            )
+          : null,
+
+      currentPeriodEnd:
+        subscription.current_end
+          ? new Date(
+              subscription.current_end *
+                1000
+            )
+          : null,
+    },
+
+    update: {
+      status:
+        mapRazorpayStatus(
+          subscription.status
+        ),
+
+      currentPeriodStart:
+        subscription.current_start
+          ? new Date(
+              subscription.current_start *
+                1000
+            )
+          : null,
+
+      currentPeriodEnd:
+        subscription.current_end
+          ? new Date(
+              subscription.current_end *
+                1000
+            )
+          : null,
+    },
+  });
+
+  break;
+}
+
+case "subscription.cancelled":
+case "subscription.completed": {
+  const subscription =
+    event.payload.subscription.entity;
+
+  await db.subscription.updateMany({
+    where: {
+      razorpaySubscriptionId:
+        subscription.id,
+    },
+
+    data: {
+      status:
+        SubscriptionStatus.CANCELED,
+    },
+  });
+
+  const existingSubscription =
+    await db.subscription.findFirst({
+      where: {
+        razorpaySubscriptionId:
+          subscription.id,
+      },
+    });
+
+  if (existingSubscription) {
+    await db.user.update({
+      where: {
+        id: existingSubscription.userId,
+      },
+
+      data: {
+        subscriptionTier:
+          SubscriptionTier.FREE,
+      },
+    });
+  }
+
+  break;
+}
+
+case "payment.failed": {
+  const subscription =
+    event.payload.subscription?.entity;
+
+  if (!subscription) break;
+
+  await db.subscription.updateMany({
+    where: {
+      razorpaySubscriptionId:
+        subscription.id,
+    },
+
+    data: {
+      status:
+        SubscriptionStatus.PAST_DUE,
+    },
+  });
+
+  break;
+}
+```
+
+}
+
+return NextResponse.json({
+received: true,
+});
+}
+
+function mapRazorpayStatus(
+status: string
+): SubscriptionStatus {
+switch (status) {
+case "active":
+case "authenticated":
+return SubscriptionStatus.ACTIVE;
+
+```
+case "pending":
+  return SubscriptionStatus.INCOMPLETE;
+
+case "halted":
+  return SubscriptionStatus.PAST_DUE;
+
+case "cancelled":
+case "completed":
+  return SubscriptionStatus.CANCELED;
+
+default:
+  return SubscriptionStatus.ACTIVE;
+```
+
+}
+}
